@@ -16,7 +16,7 @@ namespace Temp
     public partial class Form1 : Form
     {
         SerialPort serialPort = new SerialPort("COM3", 9600); // Adjust the COM port as needed
-
+        private int elapsedTime = 0;
         public Form1()
         {
             try
@@ -28,13 +28,16 @@ namespace Temp
             }
             catch (Exception)
             {
-                MessageBox.Show("Error", "It was not possible to keep the serial communication", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show( "It was not possible to keep the serial communication", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            chart1.ChartAreas[0].AxisX.Title = "Tempo (ms)";
 
+            // Configura o eixo Y para luminosidade
+            chart1.ChartAreas[0].AxisY.Title = "Luminosidade";
         }
         private void InitializeChart()
         {
@@ -45,14 +48,25 @@ namespace Temp
         }
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
+            /*
             string data = serialPort.ReadLine();
             this.Invoke(new Action(() => listBox1.Items.Add(data)));
+            UpdateChart(data);
+            */
+            string data = serialPort.ReadLine();
+            this.Invoke(new Action(() =>
+            {
+                listBox1.Items.Add(data);
+                listBox1.SelectedIndex = listBox1.Items.Count - 1;
+                listBox1.ClearSelected();
+            }));
             UpdateChart(data);
         }
         private void UpdateChart(string data)
         {
             if (chart1.InvokeRequired)
             {
+                /*
                 chart1.Invoke(new Action(() =>
                 {
                     // Parse the data to a double (assuming data is in correct format)
@@ -60,6 +74,19 @@ namespace Temp
                     {
                         // Add the luminosity value to the chart
                         chart1.Series["Luminosity"].Points.AddY(luminosityValue);
+                    }
+                }));
+                */
+                chart1.Invoke(new Action(() =>
+                {
+                    // Parse the data to a double (assuming data is in correct format)
+                    if (double.TryParse(data, out double luminosityValue))
+                    {
+                        // Add the luminosity value to the chart with the elapsed time as X value
+                        chart1.Series["Luminosity"].Points.AddXY(elapsedTime, luminosityValue);
+
+                        // Incrementa o tempo decorrido
+                        elapsedTime += 500;
                     }
                 }));
             }
@@ -74,7 +101,7 @@ namespace Temp
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     chart1.SaveImage(saveFileDialog.FileName, System.Windows.Forms.DataVisualization.Charting.ChartImageFormat.Png);
-                    MessageBox.Show("Information", "Saved suecfully", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Saved suecfully", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
         }
@@ -94,7 +121,7 @@ namespace Temp
                         {
                             sw.WriteLine(item.ToString());
                         }
-                        MessageBox.Show("Information", "Saved suecfully", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Saved suecfully","Information" , MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
             }
